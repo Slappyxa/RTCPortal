@@ -3,5 +3,5 @@ const assert = require('node:assert/strict');
 const prodConfig = require('../../server/config/production');
 
 test('production config uses GitHub Pages CORS', () => {
-  assert.equal(prodConfig.cors, 'https://dpxa.github.io');
+  assert.equal(prodConfig.cors, 'https://slappyxa.github.io');
 });

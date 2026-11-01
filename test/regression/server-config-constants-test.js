@@ -12,7 +12,7 @@ test('constants defines API routes and endpoints', () => {
   assert.equal(constants.API_ENDPOINTS.TURN_CREDENTIALS, '/turn-credentials');
 });
 test('constants defines CORS origins for GitHub Pages and localhost', () => {
-  assert.equal(constants.CORS_ORIGINS.GITHUB_PAGES, 'https://dpxa.github.io');
+  assert.equal(constants.CORS_ORIGINS.GITHUB_PAGES, 'https://slappyxa.github.io');
   assert.ok(Array.isArray(constants.CORS_ORIGINS.LOCALHOST));
 });
 test('constants defines socket transports', () => {

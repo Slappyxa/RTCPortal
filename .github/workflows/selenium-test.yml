@@ -7,13 +7,13 @@ on:
         description: "URL to test"
         required: false
         type: string
-        default: "https://dpxa.github.io/RTCPortal/"
+        default: "https://slappyxa.github.io/RTCPortal/"
   workflow_dispatch:
     inputs:
       test_url:
         description: "URL to test (defaults to the public GitHub Pages site)"
         required: false
-        default: "https://dpxa.github.io/RTCPortal/"
+        default: "https://slappyxa.github.io/RTCPortal/"
       wait_seconds:
         description: "Extra seconds to wait for deployment before testing"
         required: false

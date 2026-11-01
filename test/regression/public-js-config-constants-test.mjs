@@ -67,7 +67,7 @@ test("IPv6 loopback (::1) is treated as local", async () => {
 });
 
 test("public hostname sets environmentIsProd=true and PROD_API_URL", async () => {
-  const c = await loadConstants("dpxa.github.io");
+  const c = await loadConstants("slappyxa.github.io");
   assert.equal(c.environmentIsProd, true);
   assert.equal(c.BASE_API_URL, c.PROD_API_URL);
 });

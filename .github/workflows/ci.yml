@@ -117,7 +117,7 @@ jobs:
           EXPECTED="${{ github.sha }}"
           echo "Waiting for GitHub Pages to serve version $EXPECTED..."
           for i in $(seq 1 60); do
-            DEPLOYED=$( (curl -sf --connect-timeout 5 --max-time 15 -H "Cache-Control: no-cache, no-store" "https://dpxa.github.io/RTCPortal/version.txt?t=$(date +%s)" 2>/dev/null || true) | tr -d '\r\n[:space:]' )
+            DEPLOYED=$( (curl -sf --connect-timeout 5 --max-time 15 -H "Cache-Control: no-cache, no-store" "https://slappyxa.github.io/RTCPortal/version.txt?t=$(date +%s)" 2>/dev/null || true) | tr -d '\r\n[:space:]' )
             if [ "$DEPLOYED" = "$EXPECTED" ]; then
               echo "New version is live after $((i * 10))s."
               exit 0
@@ -183,4 +183,4 @@ jobs:
       cancel-in-progress: ${{ github.event_name == 'push' }}
     uses: ./.github/workflows/selenium-test.yml
     with:
-      test_url: "https://dpxa.github.io/RTCPortal/"
+      test_url: "https://slappyxa.github.io/RTCPortal/"
