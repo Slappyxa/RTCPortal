@@ -9,7 +9,7 @@ module.exports = {
   },
 
   CORS_ORIGINS: {
-    GITHUB_PAGES: "https://dpxa.github.io",
+    GITHUB_PAGES: "https://slappyxa.github.io",
     LOCALHOST: [
       `http://localhost:${DEFAULT_PORT}`,
       `http://127.0.0.1:${DEFAULT_PORT}`,

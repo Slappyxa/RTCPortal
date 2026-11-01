@@ -12,14 +12,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dpxa/RTCPortal.git"
+    "url": "git+https://github.com/Slappyxa/RTCPortal.git"
   },
-  "author": "dpxa",
+  "author": "Slappyxa",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/dpxa/RTCPortal/issues"
+    "url": "https://github.com/Slappyxa/RTCPortal/issues"
   },
-  "homepage": "https://github.com/dpxa/RTCPortal#readme",
+  "homepage": "https://github.com/Slappyxa/RTCPortal#readme",
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=8.0.0"
