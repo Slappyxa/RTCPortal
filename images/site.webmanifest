@@ -1,14 +1,17 @@
 {
-  "name": "",
-  "short_name": "",
+  "name": "RTCPortal - P2P Transfer Hub",
+  "short_name": "RTCPortal",
+  "description": "Peer-to-peer file transfer over WebRTC. Files move directly between browsers and never touch a server.",
+  "start_url": "../",
+  "scope": "../",
   "icons": [
     {
-      "src": "/android-chrome-192x192.png",
+      "src": "android-chrome-192x192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/android-chrome-512x512.png",
+      "src": "android-chrome-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
     }

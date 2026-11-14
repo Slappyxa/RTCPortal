@@ -17,7 +17,7 @@ class TurnService {
 
   async initializeTurnCredentials() {
     if (!environmentIsProd) {
-      console.log("Development mode: Using STUN servers only (no TURN)");
+      console.warn("Development mode: Using STUN servers only (no TURN)");
       return;
     }
 
@@ -54,7 +54,7 @@ class TurnService {
             ...RTC_CONFIG.iceServers,
             ...turnServers,
           ];
-          console.log(`TURN servers added: ${turnServers.length} server(s)`);
+          console.warn(`TURN servers added: ${turnServers.length} server(s)`);
         } else {
           console.warn("Using default STUN servers only.");
         }
