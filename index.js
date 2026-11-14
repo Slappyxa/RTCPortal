@@ -98,7 +98,10 @@ const turnTokenLimiter = rateLimit({
 });
 
 if (!isProd) {
-  app.use(express.static("public"));
+  const publicDir = path.join(__dirname, "..", "public");
+  if (fs.existsSync(publicDir)) {
+    app.use(express.static(publicDir));
+  }
 }
 
 app.get("/api/test", (req, res) => {
