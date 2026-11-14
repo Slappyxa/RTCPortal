@@ -1665,7 +1665,7 @@ class WebRTCManager {
         ? "Signaling Duration (Round-Trip)"
         : "Signaling Duration (Processing)";
 
-      console.log(`Connection Timing Stats for ${peerDisplay}:
+      console.warn(`Connection Timing Stats for ${peerDisplay}:
     - ${signalingLabel}: ${signaling}ms
     - WebRTC Negotiation: ${webRTCNegotiation}ms
     - Total Connection Duration: ${total}ms`);

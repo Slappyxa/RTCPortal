@@ -154,11 +154,23 @@ test("addIpBandwidth accumulates per-IP usage", () => {
 });
 
 test("addIpBandwidth ignores invalid input", () => {
+  const invalidValues = [-5, NaN, Infinity, -Infinity, "not-a-number", 0];
+
+  for (const value of invalidValues) {
+    const stats = freshStats();
+    stats.addIpBandwidth("1.2.3.4", value);
+    assert.equal(
+      stats.getIpBandwidth("1.2.3.4"),
+      0,
+      `addIpBandwidth must ignore ${String(value)}`,
+    );
+    assert.equal(stats.getGlobalBandwidth(), 0);
+  }
+
   const stats = freshStats();
   stats.addIpBandwidth(null, 100);
-  stats.addIpBandwidth("1.2.3.4", -5);
-  stats.addIpBandwidth("1.2.3.4", NaN);
-  assert.equal(stats.getIpBandwidth("1.2.3.4"), 0);
+  stats.addIpBandwidth("", 100);
+  assert.equal(stats.getGlobalBandwidth(), 0);
 });
 
 test("isIpOverQuota returns true only when quota exceeded", () => {

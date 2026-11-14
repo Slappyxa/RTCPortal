@@ -108,6 +108,73 @@
     const html = await res.text();
     assert.match(html, /RTCPortal/);
   });
+
+  test("static assets are served regardless of the process working directory", async () => {
+    const tmpCwd = require("fs").mkdtempSync(
+      path.join(require("os").tmpdir(), "rtcportal-cwd-"),
+    );
+    const altPort = TEST_PORT + 100;
+    const altBase = `http://127.0.0.1:${altPort}`;
+
+    const proc = spawn(process.execPath, [SERVER_ENTRY], {
+      cwd: tmpCwd,
+      env: {
+        ...process.env,
+        PORT: String(altPort),
+        NODE_ENV: "development",
+      },
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+
+    try {
+      await new Promise((resolve, reject) => {
+        let settled = false;
+        const buffer = [];
+        const onData = (chunk) => {
+          buffer.push(chunk.toString());
+          if (!settled && /Server bound to/.test(buffer.join(""))) {
+            settled = true;
+            resolve();
+          }
+        };
+        proc.stdout.on("data", onData);
+        proc.stderr.on("data", onData);
+        proc.on("error", (err) => {
+          if (!settled) {
+            settled = true;
+            reject(err);
+          }
+        });
+        setTimeout(() => {
+          if (!settled) {
+            settled = true;
+            reject(new Error("server did not start from an alternate cwd"));
+          }
+        }, 15000);
+      });
+
+      const res = await fetch(`${altBase}/`);
+      assert.equal(
+        res.status,
+        200,
+        "express.static must resolve public/ relative to the module, not process.cwd()",
+      );
+      assert.match(await res.text(), /RTCPortal/);
+    } finally {
+      proc.kill();
+      await new Promise((resolve) => {
+        if (proc.exitCode !== null) return resolve();
+        proc.once("exit", resolve);
+        setTimeout(resolve, 2000);
+      });
+      try {
+        require("fs").rmSync(tmpCwd, { recursive: true, force: true });
+      } catch {
+        // Windows keeps the cwd locked until the child fully exits; a leftover
+        // temp dir is harmless, failing the test over it is not.
+      }
+    }
+  });
 }
 
 {
@@ -264,6 +331,26 @@
     assert.ok(
       rateLimited > 0,
       `expected at least one rate-limited notice, got ${rateLimited}`,
+    );
+  });
+
+  test("the production socket budget is tight enough to matter", async () => {
+    const c = await connectInProd();
+
+    let rateLimited = 0;
+    c.on("rate-limited", () => {
+      rateLimited++;
+    });
+
+    for (let i = 0; i < 25; i++) {
+      c.emit("custom-heartbeat", { i });
+    }
+    await delay(1200);
+
+    assert.equal(
+      rateLimited,
+      0,
+      `a 25-event burst must fit inside the production budget, got ${rateLimited} notices`,
     );
   });
 }

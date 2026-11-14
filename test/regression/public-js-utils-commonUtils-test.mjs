@@ -93,6 +93,7 @@ test("formatUptime returns hours", () => {
 
 test("formatUptime returns days", () => {
   assert.equal(appUtils.formatUptime(86400000 * 3), "3 days");
+  assert.equal(appUtils.formatUptime(86400000), "1 day");
 });
 
 test("formatUptime handles non-numeric input as 0 seconds", () => {

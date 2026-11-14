@@ -19,10 +19,6 @@ function discoverTests() {
 }
 
 function runTestFile(file, coverage) {
-  if (coverage) {
-    fs.rmSync(COVERAGE_STAGING, { recursive: true, force: true });
-  }
-
   return new Promise((resolve) => {
     console.log("\n" + "=".repeat(70));
     console.log(`▶ Running: ${file}`);
@@ -44,16 +40,10 @@ function runTestFile(file, coverage) {
     });
 
     child.on("error", (err) => {
-      if (coverage) {
-        fs.rmSync(COVERAGE_STAGING, { recursive: true, force: true });
-      }
       console.error(`  [${file}] failed to start: ${err.message}`);
       resolve({ file, passed: false });
     });
     child.on("exit", (code) => {
-      if (coverage) {
-        fs.rmSync(COVERAGE_STAGING, { recursive: true, force: true });
-      }
       const passed = code === 0;
       console.log(passed ? `  ✔ ${file} PASSED` : `  ✘ ${file} FAILED`);
       resolve({ file, passed });
@@ -65,6 +55,10 @@ async function main() {
   const onlyArg = process.argv.find((a) => a.startsWith("--only="));
   const onlyName = onlyArg ? onlyArg.split("=")[1] : null;
   const coverage = process.argv.includes("--coverage");
+
+  if (coverage) {
+    fs.rmSync(COVERAGE_STAGING, { recursive: true, force: true });
+  }
 
   let files = discoverTests();
   if (onlyName) {
@@ -95,6 +89,15 @@ async function main() {
   console.log(
     allPassed ? "All regression tests passed." : "Some tests failed.",
   );
+
+  if (coverage) {
+    try {
+      fs.rmSync(COVERAGE_STAGING, { recursive: true, force: true });
+    } catch {
+      // Best-effort: a locked staging dir must not change the exit code.
+    }
+  }
+
   process.exit(allPassed ? 0 : 1);
 }
 

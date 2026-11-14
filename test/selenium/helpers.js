@@ -3,16 +3,23 @@ const chrome = require("selenium-webdriver/chrome");
 const { DEFAULT_PORT } = require("../../server/config/constants");
 
 const EXPECTED_TITLE = "RTCPortal - P2P Transfer Hub";
+const LOCAL_TEST_URL = /^(?:https?:\/\/)?(?:localhost|127\.0\.0\.1)(?::\d+)?(?:\/|$)/;
+
+// Must exceed the app's own CONNECTION_TIMEOUT (30s) so a genuine handshake
+// failure surfaces as the app's "Connection timed out" message rather than a
+// harness timeout that races it.
+const PEER_CONNECTION_TIMEOUT = 45000;
 
 function buildChromeOptions(extra = []) {
   const options = new chrome.Options();
   options.addArguments("--headless");
   options.addArguments("--no-sandbox");
   options.addArguments("--disable-dev-shm-usage");
-  options.addArguments("--disable-web-security");
-  options.addArguments("--allow-running-insecure-content");
-  options.addArguments("--use-fake-ui-for-media-stream");
-  options.addArguments("--use-fake-device-for-media-stream");
+  options.addArguments("--window-size=1440,900");
+  if (LOCAL_TEST_URL.test(process.env.TEST_URL || "")) {
+    options.addArguments("--disable-features=WebRtcHideLocalIpsWithMdns");
+  }
+  options.setLoggingPrefs({ browser: "ALL" });
   for (const arg of extra) options.addArguments(arg);
   return options;
 }
@@ -82,10 +89,7 @@ async function waitForVisible(
   await driver.wait(
     async () => {
       try {
-        const d = await el.getCssValue("display");
-        const v = await el.getCssValue("visibility");
-        const o = await el.getCssValue("opacity");
-        return d !== "none" && v !== "hidden" && o !== "0";
+        return await el.isDisplayed();
       } catch {
         return false;
       }
@@ -96,11 +100,43 @@ async function waitForVisible(
   return el;
 }
 
+async function waitForHidden(
+  driver,
+  locator,
+  timeout = 20000,
+  message = "hidden",
+) {
+  const el = await driver.wait(until.elementLocated(locator), timeout);
+  await driver.wait(
+    async () => {
+      try {
+        return !(await el.isDisplayed());
+      } catch {
+        return true;
+      }
+    },
+    timeout,
+    `Waiting for ${message}`,
+  );
+  return el;
+}
+
+async function clickElement(driver, locator, timeout = 20000) {
+  const el = await waitForVisible(driver, locator, timeout, `clickable ${locator}`);
+  await driver.executeScript(
+    "arguments[0].scrollIntoView({block: 'center'})",
+    el,
+  );
+  await driver.wait(until.elementIsEnabled(el), timeout);
+  await el.click();
+  return el;
+}
+
 async function waitForPeerConnection(driver, expectedPeerId, label) {
   const container = await waitForVisible(
     driver,
     By.id("active-connection-container"),
-    30000,
+    PEER_CONNECTION_TIMEOUT,
     "active connection container",
   );
 
@@ -108,7 +144,7 @@ async function waitForPeerConnection(driver, expectedPeerId, label) {
   await driver.wait(async () => {
     const text = (await status.getText()).trim();
     return text === expectedPeerId;
-  }, 30000);
+  }, PEER_CONNECTION_TIMEOUT);
   console.log(`${label} status: Connected to ${expectedPeerId}`);
   return container;
 }
@@ -202,6 +238,21 @@ async function verifyChatMessage(driver, text) {
   console.log(`Chat message verified: ${text}`);
 }
 
+async function getBrowserLogs(driver, label) {
+  try {
+    const entries = await driver.manage().logs().get("browser");
+    if (!entries.length) {
+      console.log(`${label}: no browser log entries`);
+      return;
+    }
+    for (const entry of entries) {
+      console.log(`${label} [${entry.level.name}] ${entry.message}`);
+    }
+  } catch (error) {
+    console.log(`${label}: browser logs unavailable (${error.message})`);
+  }
+}
+
 module.exports = {
   EXPECTED_TITLE,
   buildDriver,
@@ -209,11 +260,14 @@ module.exports = {
   waitForAssignedPeerId,
   setupPeer,
   waitForVisible,
+  waitForHidden,
+  clickElement,
   waitForPeerConnection,
   connectPeers,
   transferFile,
   sendChatMessage,
   verifyChatMessage,
+  getBrowserLogs,
   By,
   until,
 };

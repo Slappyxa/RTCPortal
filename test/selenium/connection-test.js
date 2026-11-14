@@ -6,10 +6,13 @@ const {
   getUrl,
   setupPeer,
   waitForVisible,
+  waitForHidden,
+  clickElement,
   connectPeers,
   transferFile,
   sendChatMessage,
   verifyChatMessage,
+  getBrowserLogs,
   By,
   until,
 } = require("./helpers");
@@ -53,7 +56,7 @@ async function waitForRateToMatchServer(driver, { timeout = 15000 } = {}) {
     displayed = parseRate(await readSuccessRate(driver));
     server = await readServerSuccessRate();
     if (displayed !== null && displayed === server) return displayed;
-    await driver.sleep(500);
+    await new Promise((resolve) => setTimeout(resolve, 500));
   }
 
   throw new Error(
@@ -75,7 +78,7 @@ async function waitForRatesToAgree(
     b = parseRate(await readSuccessRate(driverB));
     const agree = a !== null && b !== null && a === b;
     if (agree && (!requirePositive || a > 0)) return a;
-    await driverA.sleep(500);
+    await new Promise((resolve) => setTimeout(resolve, 500));
   }
 
   if (a !== null && a === b) {
@@ -151,17 +154,8 @@ async function runConnectionTest() {
     );
 
     console.log("Testing chat both directions");
-    const chatToggle1 = await driver1.findElement(By.id("toggle-chat-btn"));
-    await driver1.wait(until.elementIsVisible(chatToggle1), 10000);
-    await driver1.executeScript(
-      "document.getElementById('toggle-chat-btn').click()",
-    );
-
-    const chatToggle2 = await driver2.findElement(By.id("toggle-chat-btn"));
-    await driver2.wait(until.elementIsVisible(chatToggle2), 10000);
-    await driver2.executeScript(
-      "document.getElementById('toggle-chat-btn').click()",
-    );
+    await clickElement(driver1, By.id("toggle-chat-btn"), 10000);
+    await clickElement(driver2, By.id("toggle-chat-btn"), 10000);
 
     await sendChatMessage(driver1, "hello from peer1");
     await verifyChatMessage(driver2, "hello from peer1");
@@ -199,26 +193,22 @@ async function runConnectionTest() {
     console.log("Reverse file verified in receiver history");
 
     console.log("Testing disconnect");
-    await driver1.sleep(1000);
-    const endBtn = await driver1.findElement(By.id("end-btn"));
-    await driver1.wait(until.elementIsVisible(endBtn), 10000);
-    console.log("Calling onDisconnect directly...");
-    await driver1.executeScript("window.uiManager.webRtcHandlers.onDisconnect()");
-    console.log("Finished calling onDisconnect");
+    await clickElement(driver1, By.id("end-btn"), 10000);
+    console.log("Clicked the Disconnect button");
 
-    await driver1.wait(async () => {
-      const activeContainer = await driver1.findElement(By.id("active-connection-container"));
-      const isHidden = await activeContainer.getAttribute("hidden");
-      return isHidden !== null;
-    }, 5000, "Waiting for Peer 1 to hide active connection container");
+    await waitForHidden(
+      driver1,
+      By.id("active-connection-container"),
+      10000,
+      "Peer 1 to hide the active connection container",
+    );
 
-    await driver1.sleep(1000);
-
-    await driver2.wait(async () => {
-      const activeContainer = await driver2.findElement(By.id("active-connection-container"));
-      const isHidden = await activeContainer.getAttribute("hidden");
-      return isHidden !== null;
-    }, 15000, "Waiting for Peer 2 to recognize the disconnection by hiding active container");
+    await waitForHidden(
+      driver2,
+      By.id("active-connection-container"),
+      15000,
+      "Peer 2 to recognize the disconnection",
+    );
     console.log("Disconnect successfully propagated to Peer 2");
 
     console.log("Test Results:");
@@ -231,14 +221,8 @@ async function runConnectionTest() {
     console.log("All tests passed");
   } catch (error) {
     console.error("Test failed:", error.message);
-    try {
-      const logs1 = await driver1.manage().logs().get("browser");
-      console.log("Driver 1 Logs:", logs1);
-    } catch (e) {}
-    try {
-      const logs2 = await driver2.manage().logs().get("browser");
-      console.log("Driver 2 Logs:", logs2);
-    } catch (e) {}
+    if (driver1) await getBrowserLogs(driver1, "Driver 1");
+    if (driver2) await getBrowserLogs(driver2, "Driver 2");
     if (error.stack) console.error(error.stack);
     process.exitCode = 1;
   } finally {

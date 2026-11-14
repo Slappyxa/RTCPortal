@@ -2393,7 +2393,6 @@ class FileTransferManager {
   cleanupSentTransfer() {
     if (this._pendingSentCompleteTimer) {
       clearTimeout(this._pendingSentCompleteTimer);
-      // test
       this._pendingSentCompleteTimer = null;
     }
     if (this._batchConfirmationTimer) {

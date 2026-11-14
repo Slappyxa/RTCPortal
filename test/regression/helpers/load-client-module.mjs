@@ -32,7 +32,6 @@ if (process.env.RTCPORTAL_COVERAGE === "1") {
 process.on("exit", () => {
   if (process.env.RTCPORTAL_COVERAGE === "1") return;
   fs.rmSync(tempDir, { recursive: true, force: true });
-  fs.rmSync(STAGING_PARENT, { recursive: true, force: true });
 });
 
 export async function loadPureModule(name) {

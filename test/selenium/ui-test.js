@@ -3,6 +3,8 @@ const {
   buildDriver,
   getUrl,
   setupPeer,
+  clickElement,
+  getBrowserLogs,
   By,
   until,
 } = require("./helpers");
@@ -23,11 +25,10 @@ async function runUITest() {
     console.log(`UI Peer ID: ${peerId}`);
 
     console.log("Testing theme toggle");
-    const themeToggle = await driver.findElement(By.id("theme-toggle"));
     const bodyClassBefore = await driver
       .findElement(By.tagName("body"))
       .getAttribute("class");
-    await themeToggle.click();
+    await clickElement(driver, By.id("theme-toggle"), 10000);
     await driver.wait(async () => {
       const cls = await driver
         .findElement(By.tagName("body"))
@@ -44,8 +45,7 @@ async function runUITest() {
     );
 
     console.log("Testing QR code generation");
-    const showQrBtn = await driver.findElement(By.id("show-qr-btn"));
-    await showQrBtn.click();
+    await clickElement(driver, By.id("show-qr-btn"), 10000);
     await driver.wait(async () => {
       const container = await driver.findElement(By.id("qr-code-container"));
       const canvases = await container.findElements(By.tagName("canvas"));
@@ -53,15 +53,13 @@ async function runUITest() {
     }, 10000);
     console.log("QR code canvas rendered");
 
-    await showQrBtn.click();
+    await clickElement(driver, By.id("show-qr-btn"), 10000);
 
     console.log("Testing invalid partner ID");
     const partnerField = await driver.findElement(By.id("partner-id-field"));
-    const connectBtn = await driver.findElement(By.id("connect-btn"));
     await partnerField.clear();
     await partnerField.sendKeys("bad id with spaces!!");
-    await driver.wait(until.elementIsEnabled(connectBtn), 10000);
-    await connectBtn.click();
+    await clickElement(driver, By.id("connect-btn"), 10000);
     await driver.wait(async () => {
       const status = await driver.findElement(By.id("status-id-message"));
       const text = await status.getText();
@@ -93,10 +91,7 @@ async function runUITest() {
     console.log("All UI tests passed");
   } catch (error) {
     console.error("UI Test failed:", error.message);
-    try {
-      const logs = await driver.manage().logs().get("browser");
-      console.log("Browser logs:", logs);
-    } catch (e) {}
+    if (driver) await getBrowserLogs(driver, "UI Peer");
     if (error.stack) console.error(error.stack);
     process.exitCode = 1;
   } finally {

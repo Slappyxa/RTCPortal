@@ -12,14 +12,13 @@ let bundleCount = 0;
 const bundleDirs = [];
 
 // Repo-internal staging root so coverage is attributed to files under cwd.
+// The root is created on demand and only removed by run-regression-suite.js.
 const STAGING_PARENT = path.join(PROJECT_ROOT, "coverage-bundles");
-let usingStagingRoot = false;
 
 export function createBundleDir() {
   const useStagingRoot = process.env.RTCPORTAL_COVERAGE === "1";
 
   if (useStagingRoot) {
-    usingStagingRoot = true;
     fs.mkdirSync(STAGING_PARENT, { recursive: true });
     const dir = fs.mkdtempSync(
       path.join(STAGING_PARENT, `bundle-${bundleCount++}-`),
@@ -37,12 +36,20 @@ export function createBundleDir() {
 
 function removeBundleDirs() {
   for (const dir of bundleDirs.splice(0, bundleDirs.length)) {
-    fs.rmSync(dir, { recursive: true, force: true });
+    safeRemove(dir);
   }
+  // The shared staging parent is owned by run-regression-suite.js. Deleting it
+  // here would race with sibling modules that may still be resolving imports
+  // out of it, producing ERR_MODULE_NOT_FOUND in coverage runs.
+}
 
-  if (usingStagingRoot) {
-    usingStagingRoot = false;
-    fs.rmSync(STAGING_PARENT, { recursive: true, force: true });
+// On Windows a directory can stay locked briefly after the child process that
+// used it exits. A leftover temp dir is harmless; throwing from an exit handler
+// turns a clean run into a crash.
+function safeRemove(dir) {
+  try {
+    fs.rmSync(dir, { recursive: true, force: true });
+  } catch {
   }
 }
 

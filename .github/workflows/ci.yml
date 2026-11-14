@@ -9,6 +9,8 @@ on:
       - "server/**"
       - "test/**"
       - "package.json"
+      - "package-lock.json"
+      - ".node-version"
       - "eslint.config.cjs"
       - ".github/workflows/ci.yml"
       - ".github/workflows/selenium-test.yml"
@@ -30,20 +32,19 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: "24"
+          node-version: "24.22.2"
 
       - name: Install Root Dependencies
-        run: npm install
+        run: npm ci
 
       - name: Install Test Dependencies
         working-directory: ./test
-        run: npm install
+        run: npm ci
 
       - name: Install Chrome
         uses: browser-actions/setup-chrome@v2.2.0
-
-      - name: Install ChromeDriver
-        uses: nanasess/setup-chromedriver@v3
+        with:
+          install-chromedriver: true
 
       - name: Lint
         run: npm run lint
@@ -87,6 +88,8 @@ jobs:
             backend:
               - 'server/**'
               - 'package.json'
+              - 'package-lock.json'
+              - '.node-version'
 
   deploy-frontend:
     name: "3. deploy-frontend"
@@ -143,9 +146,11 @@ jobs:
         run: |
           echo "${{ github.sha }}" > server/version.txt
 
-      - name: Ensure package.json is in server directory
+      - name: Ensure package metadata and Node version are in the publish directory
         run: |
           cp package.json server/
+          cp package-lock.json server/
+          cp .node-version server/
 
       - name: Deploy to Deploy Branch
         uses: peaceiris/actions-gh-pages@v4.1.0

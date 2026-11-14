@@ -51,6 +51,7 @@ module.exports = [
       ],
       "prefer-const": "warn",
       eqeqeq: ["warn", "always"],
+      "no-console": ["warn", { allow: ["warn", "error"] }],
     },
   },
   {

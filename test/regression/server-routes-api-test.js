@@ -131,6 +131,14 @@ async function setupTurnServer(secret = "test-secret") {
   return { url, token, srv };
 }
 
+async function currentRequestIp(url) {
+  const res = await fetch(`${url}${apiPath(API_ENDPOINTS.TURN_TOKEN)}`);
+  const { token } = await res.json();
+  const dotIndex = token.lastIndexOf(".");
+  const payload = token.slice(0, dotIndex);
+  return payload.slice(payload.indexOf(":") + 1);
+}
+
 test("GET /api/turn-credentials accepts bearer token in Authorization header", async () => {
   const { url, token, srv } = await setupTurnServer();
   try {
@@ -193,6 +201,53 @@ test("GET /api/turn-credentials rejects an expired token", async () => {
       `${url}${apiPath(API_ENDPOINTS.TURN_CREDENTIALS)}?token=${encodeURIComponent(expired)}`,
     );
     assert.equal(res.status, HTTP_STATUS.FORBIDDEN);
+  } finally {
+    srv.close();
+    delete process.env.TURN_TOKEN_SECRET;
+  }
+});
+
+test("GET /api/turn-credentials rejects an expired token even when the IP matches", async () => {
+  const { url, srv } = await setupTurnServer();
+  try {
+    const crypto = require("crypto");
+    const requestIp = await currentRequestIp(url);
+    const payload = `${Date.now() - 60000}:${requestIp}`;
+    const sig = crypto
+      .createHmac("sha256", "test-secret")
+      .update(payload)
+      .digest("hex");
+    const res = await fetch(
+      `${url}${apiPath(API_ENDPOINTS.TURN_CREDENTIALS)}?token=${encodeURIComponent(`${payload}.${sig}`)}`,
+    );
+    assert.equal(
+      res.status,
+      HTTP_STATUS.FORBIDDEN,
+      "an expired token must be rejected on expiry alone, not because the IP happened to differ",
+    );
+  } finally {
+    srv.close();
+    delete process.env.TURN_TOKEN_SECRET;
+  }
+});
+
+test("GET /api/turn-credentials rejects a token issued for a different IP", async () => {
+  const { url, srv } = await setupTurnServer();
+  try {
+    const crypto = require("crypto");
+    const payload = `${Date.now() + 60000}:203.0.113.99`;
+    const sig = crypto
+      .createHmac("sha256", "test-secret")
+      .update(payload)
+      .digest("hex");
+    const res = await fetch(
+      `${url}${apiPath(API_ENDPOINTS.TURN_CREDENTIALS)}?token=${encodeURIComponent(`${payload}.${sig}`)}`,
+    );
+    assert.equal(
+      res.status,
+      HTTP_STATUS.FORBIDDEN,
+      "a valid, unexpired token bound to another IP must be rejected",
+    );
   } finally {
     srv.close();
     delete process.env.TURN_TOKEN_SECRET;
