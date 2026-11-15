@@ -15,8 +15,9 @@
     "test:connection:prod": "cross-env TEST_URL=$npm_package_config_prod_url node selenium/connection-test.js",
     "test:ui:local": "cross-env TEST_URL=$npm_package_config_local_url node selenium/ui-test.js",
     "test:ui:prod": "cross-env TEST_URL=$npm_package_config_prod_url node selenium/ui-test.js",
+    "test:ice:prod": "cross-env TEST_URL=$npm_package_config_prod_url node selenium/ice-route-test.js",
     "test:selenium:local": "npm run test:connection:local && npm run test:ui:local",
-    "test:selenium:prod": "npm run test:connection:prod && npm run test:ui:prod",
+    "test:selenium:prod": "npm run test:connection:prod && npm run test:ui:prod && npm run test:ice:prod",
     "test:all": "npm run test:regression && npm run test:selenium:local",
     "lint": "npm --prefix .. run lint",
     "lint:fix": "npm --prefix .. run lint:fix"

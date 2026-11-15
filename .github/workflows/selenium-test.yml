@@ -71,3 +71,8 @@ jobs:
         working-directory: ./test
         run: node selenium/connection-test.js
         timeout-minutes: 5
+
+      - name: Run Selenium STUN and TURN route test
+        working-directory: ./test
+        run: npm run test:ice:prod
+        timeout-minutes: 5
